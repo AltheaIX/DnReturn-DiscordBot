@@ -19,10 +19,6 @@ type Data struct {
 	}
 }
 
-var (
-	Gold int
-)
-
 func setActivity(s *discordgo.Session, r *discordgo.Ready) {
 	err := s.UpdateListeningStatus("Yorushika Gekko Live")
 	if err != nil {
@@ -43,7 +39,6 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		now := time.Now()
 		time := fmt.Sprintf("%v - %v - %v", now.Day(), now.Month(), now.Year())
 		_ = s.ChannelMessageDelete(m.ChannelID, msg.ID)
-		_ = s.ChannelMessageDelete(m.ChannelID, m.ID)
 		_, _ = s.ChannelMessageSendReply(m.ChannelID, time+"\n"+strconv.Itoa(totalGold)+" :coin:\nDengan toleransi kesalahan berkisar 10-30k gold.", m.Reference())
 	}
 }
@@ -67,9 +62,12 @@ func Run() {
 }
 
 func fetchApi() (int, error) {
-	var data Data
-	var _coin int
-	var url string
+	var (
+		data  Data
+		_coin int
+		url   string
+		Gold  int
+	)
 	user := map[string]bool{}
 
 	client := http.Client{}
@@ -118,6 +116,7 @@ func fetchApi() (int, error) {
 			_coin += smallCoin
 			user[item.Name] = true
 		}
+		fmt.Println(Gold)
 		splitCoin := regex.Split(strconv.Itoa(_coin), 2)[0]
 		coin, _ := strconv.Atoi(splitCoin)
 		Gold += coin
