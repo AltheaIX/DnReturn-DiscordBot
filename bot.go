@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -31,15 +32,29 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
-	fmt.Println(m.Content)
 
 	if m.Content == config.Prefix+"totalgold" {
-		msg, _ := s.ChannelMessageSendReply(m.ChannelID, "Mohon ditunggu, mungkin dibutuhkan 15 detik untuk mendapatkan hasilnya...", m.Reference())
-		totalGold, _ := fetchApi()
+		msg, _ := s.ChannelMessageSendReply(m.ChannelID, "Mohon ditunggu, mungkin dibutuhkan 10 detik untuk mendapatkan hasilnya...", m.Reference())
+		totalGold, _ := getTotalGold()
 		now := time.Now()
 		time := fmt.Sprintf("%v - %v - %v", now.Day(), now.Month(), now.Year())
 		_ = s.ChannelMessageDelete(m.ChannelID, msg.ID)
 		_, _ = s.ChannelMessageSendReply(m.ChannelID, time+"\n"+strconv.Itoa(totalGold)+" :coin:\nDengan toleransi kesalahan berkisar 10-30k gold.", m.Reference())
+	}
+
+	if strings.Contains(m.Content, config.Prefix+"register") {
+		regex, _ := regexp.Compile(`[^\s]*$`)
+		regexContent := regex.FindAllString(m.Content, -1)
+		splitContent := strings.Split(regexContent[0], ":")
+
+		if len(splitContent) < 4 {
+			_, _ = s.ChannelMessageSendReply(m.ChannelID, "Salah format, yang bener itu\n`suis!register username:password:pin:email`", m.Reference())
+			return
+		}
+
+		username, password, pin, email := splitContent[0], splitContent[1], splitContent[2], splitContent[3]
+		register := doRegister(username, password, pin, email)
+		_, _ = s.ChannelMessageSendReply(m.ChannelID, register, m.Reference())
 	}
 }
 
@@ -61,7 +76,7 @@ func Run() {
 	fmt.Println("Bot online, with prefix: " + config.Prefix)
 }
 
-func fetchApi() (int, error) {
+func getTotalGold() (int, error) {
 	var (
 		data  Data
 		_coin int
@@ -120,7 +135,7 @@ func fetchApi() (int, error) {
 		splitCoin := regex.Split(strconv.Itoa(_coin), 2)[0]
 		coin, _ := strconv.Atoi(splitCoin)
 		Gold += coin
-		time.Sleep(3 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
 
 	Gold += (2000 * 18) * 5
