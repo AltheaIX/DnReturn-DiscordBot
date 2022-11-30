@@ -56,6 +56,27 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		register := doRegister(username, password, pin, email)
 		_, _ = s.ChannelMessageSendReply(m.ChannelID, register, m.Reference())
 	}
+	if strings.Contains(m.Content, config.Prefix+"randomregister") {
+		split := strings.Split(m.Content, " ")
+		amount := len(split)
+		if amount > 1 {
+			_amount, err := strconv.Atoi(split[1])
+			if err != nil {
+				s.ChannelMessageSendReply(m.ChannelID, "Parameter tidak sesuai, harusnya suis!randomregister angka", m.Reference())
+			}
+			amount = _amount
+		}
+
+		for i := 0; i < amount; i++ {
+			result, payload := doRandomRegister()
+			if result != "Success create account" {
+				s.ChannelMessageSendReply(m.ChannelID, "Gagal membuat akun dikarenakan"+result, m.Reference())
+			}
+
+			s.ChannelMessageSendReply(m.ChannelID, "Berhasil membuat akun\n"+payload, m.Reference())
+			time.Sleep(3 * time.Second)
+		}
+	}
 }
 
 func Run() {
